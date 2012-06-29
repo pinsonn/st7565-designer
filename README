@@ -21,7 +21,7 @@ Legalese:
 Usage:
 
 Draw a line between the last pixel and the current pixel by holding down the shift key.
-Undo with ctrl-z or command-z.
+Undo with ctrl-z or command-z. No redo yet.
 Save and restore bitmaps/fonts from local storage
 Export/Import all items to/from a JSON file
 
