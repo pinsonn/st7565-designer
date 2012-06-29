@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 st7565-designer is a HTML5 web application for designing bitmaps and fonts for the st7565 graphical lcd. 
 Encoded bitmaps and fonts work well with Adafruit's ST7565 arduino library. This web application was written
 for my own use and was designed to run locally on my own computer. I tested it with recent releases of
