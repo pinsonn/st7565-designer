@@ -18,6 +18,13 @@ Legalese:
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+Usage:
+
+Draw a line between the last pixel and the current pixel by holding down the shift key.
+Undo with ctrl-z or command-z.
+Save and restore bitmaps/fonts from local storage
+Export/Import all items to/from a JSON file
+
 Known issues:
 
 - Chrome does not allow file access from local files by default, which is neceassary for this app to work properly. 
