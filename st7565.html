@@ -152,7 +152,7 @@ $(document).ready(function(){
 // shift key was lifted
 
 	$(document).keyup(function(evt){
-		if (evt.shiftKey){ 
+		if (evt.keyCode === 16){ 
 			glcd.shiftIsDown = false;
 		}
 	});
