@@ -1,5 +1,4 @@
 function Display(canvasID){
-
 	this.el = document.getElementById(canvasID);
 	this.ctx = this.el.getContext('2d');
 	this.w = this.ctx.canvas.width;

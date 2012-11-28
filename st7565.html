@@ -20,10 +20,12 @@
 <link rel="stylesheet" type="text/css" href="./css/style.css" />
 <script src="./scripts/jquery-1.7.2.min.js" charset="utf-8"></script>
 <script src="./scripts/Display.js"></script>
+<script src="./scripts/Dither.js"></script>
 <script>
 
 $(document).ready(function(){
 	glcd = new Display('canvas');
+	dither_img = new Dither();
 	glcd.zeroBuffer();
 	glcd.drawGrid();
 	if (localStorage['items']){
@@ -186,7 +188,6 @@ $(document).ready(function(){
 // size the window width based on the number of cols
  
 	$('#openEncoding').click(function(){
-	 	console.log($(this).css('display'));	
 		var el = $('#encodingContainer');
 		var new_width = ((glcd.cols-5)/128)*600 + 200;
 		el.css({'width': new_width});
@@ -260,6 +261,60 @@ $(document).ready(function(){
 		el.css({'left':offset + 'px'});
 		el.show();
 	});
+
+	$('input:radio[name="scan_direction"]').change(function(){
+		img.vertical_scan = (+$(this).val()) ? false : true;
+		img.onload();
+	});
+
+	$('input:radio[name="scan_pattern"]').change(function(){
+		img.raster = (+$(this).val()) ? true : false;
+		img.onload();
+	});
+
+	$('#canvas').bind('dragover', function(evt){
+
+	// prevent the browser from loading the image when it's dropped
+	// use the "copy" cursor effect on dragover
+
+		evt = evt.originalEvent;
+		evt.stopPropagation();
+		evt.preventDefault();
+		evt.dataTransfer.dropEffect = 'copy';
+	});
+
+	$('#canvas').bind('drop', function(evt){
+
+	// reference the original event, prevent default action, and bubbling
+
+		evt = evt.originalEvent;
+
+		evt.stopPropagation();
+		evt.preventDefault();
+		
+		// get an array of files dropped on the canvas. Even if multiple files are dropped, only use the first
+
+
+		var files = evt.dataTransfer.files; // FileList object.
+	
+		// create a file reader object in order to read the file
+		// use the readAsDataURL method to get the data URL
+		// set the underlay src to the dataURL using the onload method
+		// of the file reader object
+
+		var reader = new FileReader();
+		reader.onload = function(e){
+			if ((glcd.rows === 64) && (glcd.cols === 128)){
+				glcd.clear();
+				dither_img.display = glcd;
+				dither_img.img.src = e.target.result;
+			}
+		// img.onload gets called once src is done loading
+		}
+
+		reader.readAsDataURL(files[0]);
+	});
+
 });
 
 </script>
@@ -313,6 +368,14 @@ $(document).ready(function(){
 					</select>
 				</span>
 			</div>
+
+			<div class="tool">Scan Pattern:&nbsp;<input type="radio" name="scan_pattern" class="" value="1" checked/>Raster&nbsp;
+				  <input type="radio" name="scan_pattern" class="" value="0"/>Serpentine&nbsp;
+			</div>
+			<div class="tool">Scan Direction:&nbsp;<input type="radio" name="scan_direction" class="" value="1" checked/>Horizontal&nbsp;
+				  <input type="radio" name="scan_direction" class="" value="0"/>Vertical&nbsp;
+			</div>
+
 			<div id="clearBtn">Clear</div>
 		</div>
 	</div>
