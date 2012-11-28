@@ -20,11 +20,11 @@ Legalese:
 
 Usage:
 
--Draw a line between the last pixel and the current pixel by holding down the shift key.
--Undo with ctrl-z or command-z. No redo yet.
--Save and restore bitmaps/fonts from local storage
--Export/Import all items to/from a JSON file
--If you drop an image on the canvas with dimensions set to 128x64, an Atkinson dithered approximation of the image will be written to the stateBuffer array 
+- Draw a line between the last pixel and the current pixel by holding down the shift key.
+- Undo with ctrl-z or command-z. No redo yet.
+- Save and restore bitmaps/fonts from local storage
+- Export/Import all items to/from a JSON file
+- If you drop an image on the canvas with dimensions set to 128x64, an Atkinson dithered approximation of the image will be written to the stateBuffer array 
 
 Known issues:
 
