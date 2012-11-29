@@ -338,7 +338,6 @@
 	});
 
 	$('input:radio[name="scan_pattern"]').change(function(){
-		console.log("Scan pattern Changed");
 		dither_img.img.raster = (+$(this).val()) ? true : false;
 		$(dither_img.img).load();
 	});

@@ -18,10 +18,10 @@ function Dither(Display){
 // after all other tasks in .draw() have completed
 
 		var deferred = $.Deferred();
-	    	$(_parent.img).bind('load', function() {
+	    	$(_parent.img).load(function() {
 			_parent.draw(function(){
-				deferred.resolve();
 			});
+			deferred.resolve();
 		});
 	    	_parent.img.src = src;
 	    	return deferred.promise();
