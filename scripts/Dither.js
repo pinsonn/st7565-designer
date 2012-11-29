@@ -1,18 +1,37 @@
-function Dither(){
+function Dither(Display){
 	var copy_canvas = document.createElement("canvas");;
 	copy_canvas.width = 128;//canvas.width;
 	copy_canvas.height = 64;//canvas.height;
 	this.ctx = copy_canvas.getContext("2d");
 	var w = copy_canvas.width;
 	var h = copy_canvas.height;
+	this.display = Display;
 	this.img = new Image();
 	this.img.vertical_scan = false;
 	this.img.raster = true;
-	var _img = this.img; // copy of this.img
 	var _parent = this;
-	this.img.onload = function(){
-		var img_w = this.width;
-		var img_h = this.height;
+
+	this.loadImage = function(src){
+
+// function to handle asynchronous nature of image onload
+// deferred.resolve() will only resolve the promise object
+// after all other tasks in .draw() have completed
+
+		var deferred = $.Deferred();
+	    	$(_parent.img).bind('load', function() {
+			_parent.draw(function(){
+				deferred.resolve();
+			});
+		});
+	    	_parent.img.src = src;
+	    	return deferred.promise();
+	};
+ 
+	this.draw = function(callback){
+		callback = (callback !== undefined) ? callback : function(){};
+		var deferred = deferred;
+		var img_w = _parent.img.width;
+		var img_h = _parent.img.height;
 		var ar = img_w/img_h;
 		_parent.ctx.clearRect(0,0,w,h);
 		_parent.ctx.fillStyle = "white";
@@ -22,28 +41,27 @@ function Dither(){
 	// image won't fit. Scale it appropriately while preserving aspect ratio 
 	// and center it on the canvas
 			if (img_w > img_h){
-				_parent.ctx.drawImage(this,0,0.5*(h-(w/ar)),w,w/ar);
+				_parent.ctx.drawImage(_parent.img,0,0.5*(h-(w/ar)),w,w/ar);
 			} else {
-				_parent.ctx.drawImage(this,0.5*(w - (h*ar)),0,h*ar,h);
+				_parent.ctx.drawImage(_parent.img,0.5*(w - (h*ar)),0,h*ar,h);
 			}
 		} else {
 
-	// image fits. draw it. 
+	// image fits. Center and draw it. 
 
-			_parent.ctx.drawImage(this,0,0);
+			_parent.ctx.drawImage(_parent.img,0.5*(w-img_w),0.5*(h-img_h));
 		}
-	// expose the original image data. I don't think this is really necessary
+		_parent.display.ctx.drawImage(_parent.img, 0, 0);
+	// expose the original image data. I don't think this is really necessary, but may be useful at some point
 
 		_parent.original_img_data = _parent.ctx.getImageData(0,0,copy_canvas.width, copy_canvas.height);
 	        var imgData = grayscale(_parent.original_img_data);	
-		imgData = dither(imgData, _img.vertical_scan, _img.raster);
+		imgData = dither(imgData, _parent.img.vertical_scan, _parent.img.raster);
 		_parent.ctx.putImageData(imgData,0,0);
 		_parent.display.clear();
 		_parent.display.stateBuffer = (function(){
 			var output = [];
-//			var imgData = _parent.ctx.getImageData(0,0,w,h);
 			var data = imgData.data;
-
 			var row, col, index;
 			for (var i=0; i < (imgData.width * imgData.height); i+=1){
 				row = parseInt(i / w);
@@ -54,13 +72,7 @@ function Dither(){
 			return output;
 		})();
 		_parent.display.drawBuffer();
-//		_parent.display.ctx.putImageData(imgData, 0, 0);
 	};
-
-	this.ctx.font = '40px Arial';
-	this.ctx.textAlign = 'center';
-	this.ctx.fillStyle = "#a4a4a4";
-	this.ctx.fillText("Drop An Image Here", 400, 300);
 
 	function dither(imgData, vertical_scan, raster){
 		var data = imgData.data;
@@ -176,22 +188,6 @@ function Dither(){
 
 	function findDataIndex(x, y, width){
 		return (y*width*4) + (x*4);
-	};
-
-	this.toBinary = function(){
-		var output = [];
-
-		var imgData = this.ctx.getImageData(0,0,w,h);
-		var data = imgData.data;
-
-		var row, col, index;
-		for (var i=0; i < (imgData.width * imgData.height); i+=1){
-			row = parseInt(i / w);
-			col = i % w;
-			index = parseInt((row*w) + col);
-			output[col*h + row] = (data[i*4] === 255) ? 0 : 1;//(data[index] === 255) ? 1 : 0;		
-		}
-		return output;
 	};
 
 	function grayscale(imgData){

@@ -18,14 +18,80 @@
 <title>ST7565 Designer</title>
 <meta charset="utf-8">
 <link rel="stylesheet" type="text/css" href="./css/style.css" />
+
+</head>
+<body>
+<div id="savedItemsContainer">
+	<div class="button close"></div>
+	<div id="savedItemsExport">
+		<span class="button" id="exportSavedItems">Export</span>&nbsp;|&nbsp;
+		<span class="button" id="importSavedItems">Import</span>
+	</div>
+	<div id="savedItems"></div>
+</div>
+<div id="wrapper">
+	<div id="canvasField">
+		<canvas id="canvas" width=50 height=70></canvas>
+	</div>
+	<div>
+		<div id="tools">
+			<div class="tool">
+				<span class="button" id="gridToggle">Hide Grid</span>&nbsp;|&nbsp;<span class="button" id="openEncoding">Show Encoding</span>
+				&nbsp;|&nbsp;
+				<span class="button" id="saveItem">Save Item</span>&nbsp;|&nbsp;<span class="button" id="openSavedItems">Show Saved Items</span>
+			</div>
+			<div class="tool">
+				Size:<input type="text" name="cols" size="2" maxlength="3" value="5"/>x
+				<input type="text" name="rows" size="2" maxlength="2" value="7"/>
+			</div>
+			<div id="colorBar">Color:<div class="swatch" id="white"></div><div class="swatch selected" id="black"></div></div>
+			<div class="tool">
+				<span>Brush Size:</span>
+				<span><select id="brushSize">
+						<option value="1" selected>1 px</option>
+						<option value="2">2 px</option>
+						<option value="4">4 px</option>
+					</select>
+				</span>
+			</div>
+			<div class="tool">Page Bit order:&nbsp;<input type="radio" name="bit_order" class="" value="1" checked/>MSB at Top&nbsp;
+					  <input type="radio" name="bit_order" class="" value="0"/>MSB at Bottom&nbsp;
+			</div>
+			<div class="tool">
+				<span>Cell Size:</span>
+				<span>
+					<select id="pixelSize">
+						<option value="5">5 px</option>
+						<option value="10" selected>10 px</option>
+						<option value="20">20 px</option>
+						<option value="30">30 px</option>
+						<option value="50">50 px</option>
+					</select>
+				</span>
+			</div>
+			<div id="ditherTools">
+				<div class="tool">Scan Pattern:&nbsp;<input type="radio" name="scan_pattern" class="" value="1" checked/>Raster&nbsp;
+					  <input type="radio" name="scan_pattern" class="" value="0"/>Serpentine&nbsp;
+				</div>
+				<div class="tool">Scan Direction:&nbsp;<input type="radio" name="scan_direction" class="" value="1" checked/>Horizontal&nbsp;
+					  <input type="radio" name="scan_direction" class="" value="0"/>Vertical&nbsp;
+				</div>
+			</div>
+
+			<div id="clearBtn">Clear</div>
+		</div>
+	</div>
+	<div class="modal" id="encodingContainer"><div class="button close"></div><div id="hexOutput"></div></div>
+	<input type="file" id="fileImport"/>
+	<div class="modal" id="jsonContainer"><div class="button close"></div><div id="jsonOutput"></div></div>
+</div>
 <script src="./scripts/jquery-1.7.2.min.js" charset="utf-8"></script>
 <script src="./scripts/Display.js"></script>
 <script src="./scripts/Dither.js"></script>
 <script>
-
-$(document).ready(function(){
+(function($){
 	glcd = new Display('canvas');
-	dither_img = new Dither();
+	dither_img = new Dither(glcd);
 	glcd.zeroBuffer();
 	glcd.drawGrid();
 	if (localStorage['items']){
@@ -35,8 +101,12 @@ $(document).ready(function(){
 
 	$('input[type="text"][name="rows"]').val('7');
 	$('input[type="text"][name="cols"]').val('5');
-	$('#pixelSize option[value="10"]').attr('selected','selected');	
-	$('#brushSize option[value="1"]').attr('selected','selected');	
+	$('#pixelSize option[value="10"]').prop('selected','selected');	
+	$('#brushSize option[value="1"]').prop('selected','selected');	
+
+	$('input:radio[name=scan_pattern][value=1]').prop('checked', true);
+	$('input:radio[name=scan_direction][value=1]').prop('checked', true);
+	$('input:radio[name=bit_order][value=1]').prop('checked', true);
 
 // show the encoding for the display buffer (initialized to 0 for all pixels)
 
@@ -263,13 +333,14 @@ $(document).ready(function(){
 	});
 
 	$('input:radio[name="scan_direction"]').change(function(){
-		img.vertical_scan = (+$(this).val()) ? false : true;
-		img.onload();
+		dither_img.img.vertical_scan = (+$(this).val()) ? false : true;
+		$(dither_img.img).load();
 	});
 
 	$('input:radio[name="scan_pattern"]').change(function(){
-		img.raster = (+$(this).val()) ? true : false;
-		img.onload();
+		console.log("Scan pattern Changed");
+		dither_img.img.raster = (+$(this).val()) ? true : false;
+		$(dither_img.img).load();
 	});
 
 	$('#canvas').bind('dragover', function(evt){
@@ -303,85 +374,23 @@ $(document).ready(function(){
 		// of the file reader object
 
 		var reader = new FileReader();
-		reader.onload = function(e){
+		$(reader).load(function(e){
+			var load;
 			if ((glcd.rows === 64) && (glcd.cols === 128)){
 				glcd.clear();
-				dither_img.display = glcd;
-				dither_img.img.src = e.target.result;
+				$.when(dither_img.loadImage(e.target.result)).done(function(){
+					$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+					$('#ditherTools').show();
+				});
+
+			} else {
+				alert("Drag and Drop for images only allowed if size set to 128x64");
 			}
-		// img.onload gets called once src is done loading
-		}
+		});
 
 		reader.readAsDataURL(files[0]);
 	});
-
-});
-
+})(jQuery)
 </script>
-</head>
-<body>
-<div id="savedItemsContainer">
-	<div class="button close"></div>
-	<div id="savedItemsExport">
-		<span class="button" id="exportSavedItems">Export</span>&nbsp;|&nbsp;
-		<span class="button" id="importSavedItems">Import</span>
-	</div>
-	<div id="savedItems"></div>
-</div>
-<div id="wrapper">
-	<div id="canvasField">
-		<canvas id="canvas" width=50 height=70></canvas>
-	</div>
-	<div>
-		<div id="tools">
-			<div class="tool">
-				<span class="button" id="gridToggle">Hide Grid</span>&nbsp;|&nbsp;<span class="button" id="openEncoding">Show Encoding</span>
-				&nbsp;|&nbsp;
-				<span class="button" id="saveItem">Save Item</span>&nbsp;|&nbsp;<span class="button" id="openSavedItems">Show Saved Items</span>
-			</div>
-			<div class="tool">
-				Size:<input type="text" name="cols" size="2" maxlength="3" value="5"/>x
-				<input type="text" name="rows" size="2" maxlength="2" value="7"/>
-			</div>
-			<div id="colorBar">Color:<div class="swatch" id="white"></div><div class="swatch selected" id="black"></div></div>
-			<div class="tool">
-				<span>Brush Size:</span>
-				<span><select id="brushSize">
-						<option value="1" selected>1 px</option>
-						<option value="2">2 px</option>
-						<option value="4">4 px</option>
-					</select>
-				</span>
-			</div>
-			<div class="tool">Page Bit order:&nbsp;<input type="radio" name="bit_order" class="" value="1" checked/>MSB at Top&nbsp;
-					  <input type="radio" name="bit_order" class="" value="0"/>MSB at Bottom&nbsp;
-			</div>
-			<div class="tool">
-				<span>Cell Size:</span>
-				<span>
-					<select id="pixelSize">
-						<option value="5">5 px</option>
-						<option value="10" selected>10 px</option>
-						<option value="20">20 px</option>
-						<option value="30">30 px</option>
-						<option value="50">50 px</option>
-					</select>
-				</span>
-			</div>
-
-			<div class="tool">Scan Pattern:&nbsp;<input type="radio" name="scan_pattern" class="" value="1" checked/>Raster&nbsp;
-				  <input type="radio" name="scan_pattern" class="" value="0"/>Serpentine&nbsp;
-			</div>
-			<div class="tool">Scan Direction:&nbsp;<input type="radio" name="scan_direction" class="" value="1" checked/>Horizontal&nbsp;
-				  <input type="radio" name="scan_direction" class="" value="0"/>Vertical&nbsp;
-			</div>
-
-			<div id="clearBtn">Clear</div>
-		</div>
-	</div>
-	<div class="modal" id="encodingContainer"><div class="button close"></div><div id="hexOutput"></div></div>
-	<input type="file" id="fileImport"/>
-	<div class="modal" id="jsonContainer"><div class="button close"></div><div id="jsonOutput"></div></div>
-</div>
 </body>
 </html>
