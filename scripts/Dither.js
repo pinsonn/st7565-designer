@@ -74,6 +74,28 @@ function Dither(Display){
 		_parent.display.drawBuffer();
 	};
 
+	function ErrorTechnique(initObj){
+		this.name = initObj.name;
+		this.weights = initObj.weights || 1;
+		this.divisor = initObj.divisor;
+		this.nxy_offsets = initObj.nxy_offsets;
+		var _parent = this;
+		this.setNXY = function(x, y){
+			_parent.nxy = [];
+			var temp_obj;
+			var dx, dy;
+			for (var i=0; i < this.nxy_offsets.length; i += 1){
+				temp_obj = {x: 0, y: 0};
+				dx = _parent.nxy_offsets[i].dx;
+				dy = _parent.nxy_offsets[i].dy;
+	
+				temp_obj.x = x + dx;
+				temp_obj.y = y + dy;
+				_parent.nxy.push(temp_obj);
+			}
+		}
+	}
+
 	function dither(imgData, vertical_scan, raster){
 		var data = imgData.data;
 		var w = imgData.width;
@@ -82,7 +104,45 @@ function Dither(Display){
 		var new_value, old_value, err;
 		var x = y = 0;
 		var dx = dy = 1;
-		
+		var atkinson_right = new ErrorTechnique({name: 'atkinson_right',
+							 nxy_offsets: [{dx: 1, dy: 0},
+								       {dx: 2, dy: 0},
+								       {dx: -1, dy: 1},
+								       {dx: 0, dy: 1},
+								       {dx: 1, dy: 1},
+								       {dx: 0, dy: 2}],
+							 weights: [1,1,1,1,1,1],
+							 divisor: 3});
+
+		var atkinson_left = new ErrorTechnique({name: 'atkinson_left', 
+							nxy_offsets: [{dx:-1, dy: 0},
+  								      {dx:-2, dy:0},
+								      {dx:-1, dy: 1},
+								      {dx:0, dy: 1},
+								      {dx:1, dy: 1},
+								      {dx:0, dy: 2}],
+							weights: [1,1,1,1,1,1],
+							divisor: 3});
+
+		var atkinson_up = new ErrorTechnique({name: 'atkinson_up', 
+					              nxy_offsets: [{dx:0, dy: -1},
+  								      {dx:0, dy:-2},
+								      {dx:1, dy: -1},
+								      {dx:1, dy: 0},
+								      {dx:1, dy:1},
+								      {dx:2, dy: 0}],
+						       weights: [1,1,1,1,1,1],
+						       divisor: 3});
+
+		var atkinson_down = new ErrorTechnique({name: 'atkinson_down',
+							 nxy_offsets: [{dx: 0, dy: 1},
+								       {dx: 0, dy: 2},
+								       {dx: 1, dy: -1},
+								       {dx: 1, dy: 0},
+								       {dx: 1, dy: 1},
+								       {dx: 2, dy: 0}],
+							 weights: [1,1,1,1,1,1],
+							 divisor: 3});	
 		if (raster){
 			rasterScan();
 		} else {
@@ -93,16 +153,19 @@ function Dither(Display){
 		return imgData;
 
 		function rasterScan(){
+			var em;
 			if (vertical_scan){
-				for(y = 0; y < h; y++){
-					for (x = 0; x < w; x++){
-						diffuseError();
+				for (x = 0; x < w; x+=1){
+					for(y = 0; y < h; y++){
+						atkinson_down.setNXY(x,y);
+						diffuseError(atkinson_down);
 					}
 				}
 			} else {
-				for (x = 0; x < w; x++){
-					for(y = 0; y < h; y++){
-						diffuseError();
+				for(y = 0; y < h; y+=1){
+					for (x = 0; x < w; x++){
+						atkinson_right.setNXY(x,y);
+						diffuseError(atkinson_right);
 					}
 				}
 			}	
@@ -110,9 +173,12 @@ function Dither(Display){
 
 
 		function serpentineScan(){
+			var active_technique;
 			if (vertical_scan){
 				while (x < w){
-					diffuseError();
+					active_technique = (dy === 1) ? atkinson_down : atkinson_up;
+					active_technique.setNXY(x,y);
+					diffuseError(active_technique);
 					y += dy;
 
 					if (y === h){
@@ -127,7 +193,9 @@ function Dither(Display){
 				}
 			} else {
 				while (y < h){
-					diffuseError();
+					active_technique = (dx === 1) ? atkinson_right : atkinson_left;
+					active_technique.setNXY(x,y);
+					diffuseError(active_technique);
 					x += dx;
 					if (x === w){
 						dx = -1;
@@ -141,6 +209,9 @@ function Dither(Display){
 			}
 		}
 
+
+
+
 // private member function to calculate and propogate 
 // the error to adjacent pixels
 // according to the atkinson dithering algorithm
@@ -148,27 +219,21 @@ function Dither(Display){
 //     1/8 1/8 1/8
 //         1/8
 
-		function diffuseError(){
-				var nxy = [{x: x+1, y: y},
-					   {x: x+2, y: y},
-					   {x: x-1, y: y+1},
-					   {x: x, y: y+1},
-					   {x: x+1, y: y+1},
-					   {x: x, y: y+2}];
+		function diffuseError(error_technique){
+				var nxy = error_technique.nxy;
 				d_index = findDataIndex(x, y, w);	
 				old_value = data[d_index];
 				new_value = (old_value > 128) ? 255 : 0;
 				data[d_index] = data[d_index + 1] = data[d_index + 2] = new_value;
-				err = (old_value - new_value) >> 3;
+				err = ((old_value - new_value) >> error_technique.divisor); 
 				$.each(nxy, function(i, px){
 					if (inBounds(px.x, px.y, w, h)){
 						var o_index = findDataIndex(px.x, px.y, w);
 						var val = data[o_index];
-						data[o_index] = data[o_index + 1] = data[o_index + 2] = val + err;
+						data[o_index] = data[o_index + 1] = data[o_index + 2] = val + (err * error_technique.weights[i]);
 					}
 				});
 		}
-
 // private member function to find corresponding index within the imageData.data array 
 // for a given pixel at coordinate (x,y);
 
