@@ -70,6 +70,10 @@
 				</span>
 			</div>
 			<div id="ditherTools">
+				<div class="tool">Filter:&nbsp;<input type="radio" name="filter" class="" value="fs" checked/>Floyd Steinberg&nbsp;
+						  <input type="radio" name="filter" class="" value="atkinson"/>Atkinson&nbsp;
+						  <input type="radio" name="filter" class="" value="sierra"/>Sierra Lite&nbsp;
+				</div>
 				<div class="tool">Scan Pattern:&nbsp;<input type="radio" name="scan_pattern" class="" value="1" checked/>Raster&nbsp;
 					  <input type="radio" name="scan_pattern" class="" value="0"/>Serpentine&nbsp;
 				</div>
@@ -90,8 +94,10 @@
 <script src="./scripts/Dither.js"></script>
 <script>
 (function($){
+	
 	glcd = new Display('canvas');
 	dither_img = new Dither(glcd);
+	dither_img.useFloydSteinbergFilters();
 	glcd.zeroBuffer();
 	glcd.drawGrid();
 	if (localStorage['items']){
@@ -104,6 +110,7 @@
 	$('#pixelSize option[value="10"]').prop('selected','selected');	
 	$('#brushSize option[value="1"]').prop('selected','selected');	
 
+	$('input:radio[name=filter][value="fs"]').prop('checked', true);
 	$('input:radio[name=scan_pattern][value=1]').prop('checked', true);
 	$('input:radio[name=scan_direction][value=1]').prop('checked', true);
 	$('input:radio[name=bit_order][value=1]').prop('checked', true);
@@ -339,6 +346,18 @@
 
 	$('input:radio[name="scan_pattern"]').change(function(){
 		dither_img.img.raster = (+$(this).val()) ? true : false;
+		$(dither_img.img).load();
+	});
+
+	$('input:radio[name="filter"]').change(function(){
+		var technique = $(this).val();
+		if (technique === "fs"){
+			dither_img.useFloydSteinbergFilters();
+		} else if (technique === "atkinson"){
+			dither_img.useAtkinsonFilters();
+		} else {
+			dither_img.useSierraFilters();
+		}
 		$(dither_img.img).load();
 	});
 

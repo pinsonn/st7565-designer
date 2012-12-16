@@ -56,7 +56,7 @@ function Dither(Display){
 
 		_parent.original_img_data = _parent.ctx.getImageData(0,0,copy_canvas.width, copy_canvas.height);
 	        var imgData = grayscale(_parent.original_img_data);	
-		imgData = dither(imgData, _parent.img.vertical_scan, _parent.img.raster);
+		imgData = dither(imgData, _parent.img);
 		_parent.ctx.putImageData(imgData,0,0);
 		_parent.display.clear();
 		_parent.display.stateBuffer = (function(){
@@ -67,12 +67,13 @@ function Dither(Display){
 				row = parseInt(i / w);
 				col = i % w;
 				index = parseInt((row*w) + col);
-				output[col*h + row] = (data[i*4] > 128) ? 0 : 1;//(data[index] === 255) ? 1 : 0;		
+				output[col*h + row] = (data[i*4] === 255) ? 0 : 1;//(data[index] === 255) ? 1 : 0;		
 			}
 			return output;
 		})();
 		_parent.display.drawBuffer();
 	};
+
 
 	function ErrorTechnique(initObj){
 		this.name = initObj.name;
@@ -96,14 +97,14 @@ function Dither(Display){
 		}
 	}
 
-	function dither(imgData, vertical_scan, raster){
-		var data = imgData.data;
-		var w = imgData.width;
-		var h = imgData.height;
-		var d_index = 0;
-		var new_value, old_value, err;
-		var x = y = 0;
-		var dx = dy = 1;
+	function Filter(right, left, up, down){
+		this.right = right;
+		this.left = left;
+		this.up = up;
+		this.down = down;
+	}
+	
+	this.useAtkinsonFilters = function(){
 		var atkinson_right = new ErrorTechnique({name: 'atkinson_right',
 							 nxy_offsets: [{dx: 1, dy: 0},
 								       {dx: 2, dy: 0},
@@ -142,7 +143,91 @@ function Dither(Display){
 								       {dx: 1, dy: 1},
 								       {dx: 2, dy: 0}],
 							 weights: [1,1,1,1,1,1],
-							 divisor: 3});	
+							 divisor: 3});
+
+		_parent.img.filter = new Filter(atkinson_right, atkinson_left, atkinson_up, atkinson_down);
+	};
+	
+	this.useSierraFilters = function(){
+		var sierra_right = new ErrorTechnique({name: 'sierra_right', 
+						       nxy_offsets: [{dx: 1, dy: 0},
+                                                                     {dx: -1, dy: 1},
+                                                                     {dx: 0, dy: 1}],
+							weights: [2,1,1],
+							divisor: 2});
+		
+		var sierra_left = new ErrorTechnique({name: 'sierra_left', 
+						       nxy_offsets: [{dx: -1, dy: 0},
+                                                                     {dx: 1, dy: 1},
+                                                                     {dx: 0, dy: 1}],
+							weights: [2,1,1],
+							divisor: 2});
+
+		var sierra_up = new ErrorTechnique({name: 'sierra_up', 
+						       nxy_offsets: [{dx: 0, dy: -1},
+                                                                     {dx: 1, dy: 1},
+                                                                     {dx: 1, dy: 0}],
+							weights: [2,1,1],
+							divisor: 2});
+
+		var sierra_down = new ErrorTechnique({name: 'sierra_down', 
+						       nxy_offsets: [{dx: 0, dy: 1},
+                                                                     {dx: 1, dy: 1},
+                                                                     {dx: 1, dy: 0}],
+							weights: [2,1,1],
+							divisor: 2});
+		_parent.img.filter = new Filter(sierra_right, sierra_left, sierra_up, sierra_down);
+	};
+
+	this.useFloydSteinbergFilters = function(){
+		var fs_right = new ErrorTechnique({name:'fs_right',
+                                                   nxy_offsets: [{dx: 1, dy: 0},
+							         {dx:-1, dy: 1},  
+							         {dx:0, dy: 1},  
+							         {dx:1, dy: 1}],
+						   weights: [7,3,5,1],
+						   divisor: 4});
+
+		var fs_left = new ErrorTechnique({name:'fs_left',
+                                                   nxy_offsets: [{dx: -1, dy: 0},
+							         {dx:1, dy: 1},  
+							         {dx:0, dy: 1},  
+							         {dx:-1, dy: 1}],
+						   weights: [7,3,5,1],
+						   divisor: 4});
+		
+		var fs_up = new ErrorTechnique({name:'fs_up',
+                                                   nxy_offsets: [{dx: 0, dy: -1},
+							         {dx:1, dy: 1},  
+							         {dx:1, dy: 0},  
+							         {dx:1, dy: -1}],
+						   weights: [7,3,5,1],
+						   divisor: 4});
+
+		var fs_down = new ErrorTechnique({name:'fs_down',
+                                                   nxy_offsets: [{dx: 0, dy: 1},
+							         {dx:1, dy: -1},  
+							         {dx:1, dy: 0},  
+							         {dx:1, dy: 1}],
+						   weights: [7,3,5,1],
+						   divisor: 4});
+
+		_parent.img.filter = new Filter(fs_right, fs_left, fs_up, fs_down);
+	};
+
+	function dither(imgData, img){
+		var vertical_scan = img.vertical_scan;
+		var raster = img.raster;
+		var filter = img.filter;
+
+		var data = imgData.data;
+		var w = imgData.width;
+		var h = imgData.height;
+		var d_index = 0;
+		var new_value, old_value, err;
+		var x = y = 0;
+		var dx = dy = 1;
+
 		if (raster){
 			rasterScan();
 		} else {
@@ -152,20 +237,21 @@ function Dither(Display){
 		imgData.data = data;
 		return imgData;
 
+		
 		function rasterScan(){
 			var em;
 			if (vertical_scan){
 				for (x = 0; x < w; x+=1){
 					for(y = 0; y < h; y++){
-						atkinson_down.setNXY(x,y);
-						diffuseError(atkinson_down);
+						filter.down.setNXY(x,y);
+						diffuseError(filter.down);
 					}
 				}
 			} else {
 				for(y = 0; y < h; y+=1){
 					for (x = 0; x < w; x++){
-						atkinson_right.setNXY(x,y);
-						diffuseError(atkinson_right);
+						filter.right.setNXY(x,y);
+						diffuseError(filter.right);
 					}
 				}
 			}	
@@ -176,7 +262,7 @@ function Dither(Display){
 			var active_technique;
 			if (vertical_scan){
 				while (x < w){
-					active_technique = (dy === 1) ? atkinson_down : atkinson_up;
+					active_technique = (dy === 1) ? filter.down : filter.up;
 					active_technique.setNXY(x,y);
 					diffuseError(active_technique);
 					y += dy;
@@ -193,7 +279,7 @@ function Dither(Display){
 				}
 			} else {
 				while (y < h){
-					active_technique = (dx === 1) ? atkinson_right : atkinson_left;
+					active_technique = (dx === 1) ? filter.right : filter.left;
 					active_technique.setNXY(x,y);
 					diffuseError(active_technique);
 					x += dx;
@@ -208,7 +294,6 @@ function Dither(Display){
 				}
 			}
 		}
-
 
 
 
@@ -234,8 +319,6 @@ function Dither(Display){
 					}
 				});
 		}
-// private member function to find corresponding index within the imageData.data array 
-// for a given pixel at coordinate (x,y);
 
 
 // private member function to test whether a given pixel lies within the bounds of 
@@ -250,6 +333,9 @@ function Dither(Display){
 			return false;
 		}
 	};
+
+// private member function to find corresponding index within the imageData.data array 
+// for a given pixel at coordinate (x,y);
 
 	function findDataIndex(x, y, width){
 		return (y*width*4) + (x*4);

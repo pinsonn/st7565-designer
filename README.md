@@ -24,7 +24,8 @@ Usage:
 - Undo with ctrl-z or command-z. No redo yet.
 - Save and restore bitmaps/fonts from local storage
 - Export/Import all items to/from a JSON file
-- If you drop an image on the canvas with dimensions set to 128x64, an Atkinson dithered approximation of the image will be written to the stateBuffer array 
+- Drag and drop an image on the canvas (with canvas dimensions set to 128x64) to write a dithered approximation of the image to the display
+- Current dithering techniques available: Floyd-Steinberg, Atkinson, and Sierra Lite (Sierra-2-4A)
 
 Known issues:
 
@@ -37,3 +38,5 @@ load saved bitmaps/fonts from a json file won't work as a result. Webkit nightli
 Safari may well do so as well in a future release. Webkit nightlies available from http://nightly.webkit.org/
 
 - No anomalies noted in Firefox
+
+- Some dithering methods result in stray pixels. Currently investigating why. 
