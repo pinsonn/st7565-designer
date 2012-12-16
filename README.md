@@ -25,7 +25,7 @@ Usage:
 - Save and restore bitmaps/fonts from local storage
 - Export/Import all items to/from a JSON file
 - Drag and drop an image on the canvas (with canvas dimensions set to 128x64) to write a dithered approximation of the image to the display
-- Current dithering techniques available: Floyd-Steinberg, Atkinson, and Sierra Lite (Sierra-2-4A)
+- Current quantization/dithering techniques available: Floyd-Steinberg, Atkinson, and Sierra Lite (Sierra-2-4A), and Threshold
 
 Known issues:
 

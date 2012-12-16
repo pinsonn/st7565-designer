@@ -215,6 +215,14 @@ function Dither(Display){
 		_parent.img.filter = new Filter(fs_right, fs_left, fs_up, fs_down);
 	};
 
+	this.useThresholdFilters = function(){
+		var t = new ErrorTechnique({name: 'threshold_right',
+						  nxy_offsets: [{dx: 0, dy: 0}],
+						  weights : [0],
+						  divisor: 0});
+		_parent.img.filter = new Filter(t, t, t, t);
+	};
+
 	function dither(imgData, img){
 		var vertical_scan = img.vertical_scan;
 		var raster = img.raster;

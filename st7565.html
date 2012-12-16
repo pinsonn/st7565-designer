@@ -70,9 +70,12 @@
 				</span>
 			</div>
 			<div id="ditherTools">
-				<div class="tool">Filter:&nbsp;<input type="radio" name="filter" class="" value="fs" checked/>Floyd Steinberg&nbsp;
-						  <input type="radio" name="filter" class="" value="atkinson"/>Atkinson&nbsp;
-						  <input type="radio" name="filter" class="" value="sierra"/>Sierra Lite&nbsp;
+				<div class="tool">Filter:&nbsp;<select id="filter">
+							<option value="fs" selected>Floyd Steinberg</option>
+							<option value="atkinson">Atkinson</option>
+							<option value="sierra">Sierra Lite</option>
+							<option value="threshold">Threshold</option>
+						</select>
 				</div>
 				<div class="tool">Scan Pattern:&nbsp;<input type="radio" name="scan_pattern" class="" value="1" checked/>Raster&nbsp;
 					  <input type="radio" name="scan_pattern" class="" value="0"/>Serpentine&nbsp;
@@ -110,7 +113,8 @@
 	$('#pixelSize option[value="10"]').prop('selected','selected');	
 	$('#brushSize option[value="1"]').prop('selected','selected');	
 
-	$('input:radio[name=filter][value="fs"]').prop('checked', true);
+//	$('input:radio[name=filter][value="fs"]').prop('checked', true);
+	$('#filter option[value="fs"]').prop('selected','selected');	
 	$('input:radio[name=scan_pattern][value=1]').prop('checked', true);
 	$('input:radio[name=scan_direction][value=1]').prop('checked', true);
 	$('input:radio[name=bit_order][value=1]').prop('checked', true);
@@ -349,14 +353,17 @@
 		$(dither_img.img).load();
 	});
 
-	$('input:radio[name="filter"]').change(function(){
+	$('#filter').change(function(){
+//	$('input:radio[name="filter"]').change(function(){
 		var technique = $(this).val();
 		if (technique === "fs"){
 			dither_img.useFloydSteinbergFilters();
 		} else if (technique === "atkinson"){
 			dither_img.useAtkinsonFilters();
-		} else {
+		} else if (technique === "sierra"){
 			dither_img.useSierraFilters();
+		} else {
+			dither_img.useThresholdFilters();
 		}
 		$(dither_img.img).load();
 	});
