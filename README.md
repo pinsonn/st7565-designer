@@ -5,7 +5,7 @@ Encoded bitmaps and fonts work well with Adafruit's ST7565 arduino library. This
 for my own use and was designed to run locally on my own computer. I tested it with recent releases of
 Firefox, Safari, and Chrome. I did not test it in IE, nor do I intend to do so. 
 
-##Legalese:## 
+##Legalese:
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ Firefox, Safari, and Chrome. I did not test it in IE, nor do I intend to do so.
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-##Usage:##
+##Usage:
 
 - Draw a line between the last pixel and the current pixel by holding down the shift key.
 - Undo with ctrl-z or command-z. No redo yet.
@@ -29,7 +29,7 @@ Firefox, Safari, and Chrome. I did not test it in IE, nor do I intend to do so.
 - Drag and drop an image on the canvas (with canvas dimensions set to 128x64) to write a dithered approximation of the image to the display
 - Current quantization/dithering techniques available: Floyd-Steinberg, Atkinson, and Sierra Lite (Sierra-2-4A), and Threshold
 
-##Known issues:##
+##Known issues:
 
 - Chrome does not allow file access from local files by default, which is neceassary for this app to work properly. 
 If run locally (i.e. not through a hostor local server), start chrome with the '--allow-file-access-from-files' flag 
@@ -43,12 +43,12 @@ Safari may well do so as well in a future release. Webkit nightlies available fr
 
 - Some dithering methods result in stray pixels. Currently investigating why. 
 
-##Node-webkit:##
+##Node-webkit:
 
 - Behaves more like a true "native" application with file save dialogs and access to the system clipboard. 
 
-##Revision History:##
-###3/28/13### - Added node-webkit implementation. 
-###12/15/12### - Threshold quantization for dropped images added to dithering routines. 
-###11/27/12### - Support for one-bit image dithering added. Drop an image onto the display canvas and behold the wonders!
-###6/28/12### - Initial commit. 
+##Revision History:
+**3/28/13**- Added node-webkit implementation. 
+**12/15/12**- Threshold quantization for dropped images added to dithering routines. 
+**11/27/12**- Support for one-bit image dithering added. Drop an image onto the display canvas and behold the wonders!
+**6/28/12**- Initial commit. 
