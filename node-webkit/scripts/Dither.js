@@ -105,137 +105,141 @@ function Dither(Display){
   }
   
   this.useAtkinsonFilters = function(){
-    var atkinson_right = new ErrorTechnique({name: 'atkinson_right',
-               nxy_offsets: [{dx: 1, dy: 0},
-                       {dx: 2, dy: 0},
-                       {dx: -1, dy: 1},
-                       {dx: 0, dy: 1},
-                       {dx: 1, dy: 1},
-                       {dx: 0, dy: 2}],
-               weights: [1,1,1,1,1,1],
-               divisor: 3});
+    var atkinson_right, atkinson_left, atkinson_up, atkinson_down;
+    atkinson_right = new ErrorTechnique({name: 'atkinson_right',
+                                         nxy_offsets: [{dx: 1, dy: 0},
+                                                       {dx: 2, dy: 0},
+                                                       {dx: -1, dy: 1},
+                                                       {dx: 0, dy: 1},
+                                                       {dx: 1, dy: 1},
+                                                       {dx: 0, dy: 2}],
+                                         weights: [1,1,1,1,1,1],
+                                         divisor: 3});
 
-    var atkinson_left = new ErrorTechnique({name: 'atkinson_left', 
-              nxy_offsets: [{dx:-1, dy: 0},
-                        {dx:-2, dy:0},
-                      {dx:-1, dy: 1},
-                      {dx:0, dy: 1},
-                      {dx:1, dy: 1},
-                      {dx:0, dy: 2}],
-              weights: [1,1,1,1,1,1],
-              divisor: 3});
+    atkinson_left = new ErrorTechnique({name: 'atkinson_left', 
+                                        nxy_offsets: [{dx:-1, dy: 0},
+                                                      {dx:-2, dy:0},
+                                                      {dx:-1, dy: 1},
+                                                      {dx:0, dy: 1},
+                                                      {dx:1, dy: 1},
+                                                      {dx:0, dy: 2}],
+                                        weights: [1,1,1,1,1,1],
+                                        divisor: 3});
 
-    var atkinson_up = new ErrorTechnique({name: 'atkinson_up', 
-                        nxy_offsets: [{dx:0, dy: -1},
-                        {dx:0, dy:-2},
-                      {dx:1, dy: -1},
-                      {dx:1, dy: 0},
-                      {dx:1, dy:1},
-                      {dx:2, dy: 0}],
-                   weights: [1,1,1,1,1,1],
-                   divisor: 3});
+    atkinson_up = new ErrorTechnique({name: 'atkinson_up', 
+                                      nxy_offsets: [{dx:0, dy: -1},
+                                                    {dx:0, dy:-2},
+                                                    {dx:1, dy: -1},
+                                                    {dx:1, dy: 0},
+                                                    {dx:1, dy:1},
+                                                    {dx:2, dy: 0}],
+                                      weights: [1,1,1,1,1,1],
+                                      divisor: 3});
 
-    var atkinson_down = new ErrorTechnique({name: 'atkinson_down',
-               nxy_offsets: [{dx: 0, dy: 1},
-                       {dx: 0, dy: 2},
-                       {dx: 1, dy: -1},
-                       {dx: 1, dy: 0},
-                       {dx: 1, dy: 1},
-                       {dx: 2, dy: 0}],
-               weights: [1,1,1,1,1,1],
-               divisor: 3});
+    atkinson_down = new ErrorTechnique({name: 'atkinson_down',
+                                        nxy_offsets: [{dx: 0, dy: 1},
+                                                      {dx: 0, dy: 2},
+                                                      {dx: 1, dy: -1},
+                                                      {dx: 1, dy: 0},
+                                                      {dx: 1, dy: 1},
+                                                      {dx: 2, dy: 0}],
+                                        weights: [1,1,1,1,1,1],
+                                        divisor: 3});
 
     _parent.img.filter = new Filter(atkinson_right, atkinson_left, atkinson_up, atkinson_down);
   };
   
   this.useSierraFilters = function(){
-    var sierra_right = new ErrorTechnique({name: 'sierra_right', 
-                   nxy_offsets: [{dx: 1, dy: 0},
-                                                                     {dx: -1, dy: 1},
-                                                                     {dx: 0, dy: 1}],
-              weights: [2,1,1],
-              divisor: 2});
+    var sierra_right, sierra_left, sierra_up, sierra_down;
+    sierra_right = new ErrorTechnique({name: 'sierra_right', 
+                                       nxy_offsets: [{dx: 1, dy: 0},
+                                                     {dx: -1, dy: 1},
+                                                     {dx: 0, dy: 1}],
+                                       weights: [2,1,1],
+                                       divisor: 2});
     
-    var sierra_left = new ErrorTechnique({name: 'sierra_left', 
-                   nxy_offsets: [{dx: -1, dy: 0},
-                                                                     {dx: 1, dy: 1},
-                                                                     {dx: 0, dy: 1}],
-              weights: [2,1,1],
-              divisor: 2});
+    sierra_left = new ErrorTechnique({name: 'sierra_left', 
+                                      nxy_offsets: [{dx: -1, dy: 0},
+                                                    {dx: 1, dy: 1},
+                                                    {dx: 0, dy: 1}],
+                                      weights: [2,1,1],
+                                      divisor: 2});
 
-    var sierra_up = new ErrorTechnique({name: 'sierra_up', 
-                   nxy_offsets: [{dx: 0, dy: -1},
-                                                                     {dx: 1, dy: 1},
-                                                                     {dx: 1, dy: 0}],
-              weights: [2,1,1],
-              divisor: 2});
+    sierra_up = new ErrorTechnique({name: 'sierra_up', 
+                                    nxy_offsets: [{dx: 0, dy: -1},
+                                                  {dx: 1, dy: 1},
+                                                  {dx: 1, dy: 0}],
+                                    weights: [2,1,1],
+                                    divisor: 2});
 
-    var sierra_down = new ErrorTechnique({name: 'sierra_down', 
-                   nxy_offsets: [{dx: 0, dy: 1},
-                                                                     {dx: 1, dy: 1},
-                                                                     {dx: 1, dy: 0}],
-              weights: [2,1,1],
-              divisor: 2});
+    sierra_down = new ErrorTechnique({name: 'sierra_down', 
+                                      nxy_offsets: [{dx: 0, dy: 1},
+                                                    {dx: 1, dy: 1},
+                                                    {dx: 1, dy: 0}],
+                                      weights: [2,1,1],
+                                      divisor: 2});
+
     _parent.img.filter = new Filter(sierra_right, sierra_left, sierra_up, sierra_down);
   };
 
   this.useFloydSteinbergFilters = function(){
-    var fs_right = new ErrorTechnique({name:'fs_right',
-                                                   nxy_offsets: [{dx: 1, dy: 0},
-                       {dx:-1, dy: 1},  
-                       {dx:0, dy: 1},  
-                       {dx:1, dy: 1}],
-               weights: [7,3,5,1],
-               divisor: 4});
+    var fs_right, fs_left, fs_up, fs_down;
+    fs_right = new ErrorTechnique({name:'fs_right',
+                                       nxy_offsets: [{dx: 1, dy: 0},
+                                                     {dx:-1, dy: 1},  
+                                                     {dx:0, dy: 1},  
+                                                     {dx:1, dy: 1}],
+                                       weights: [7,3,5,1],
+                                       divisor: 4});
 
-    var fs_left = new ErrorTechnique({name:'fs_left',
-                                                   nxy_offsets: [{dx: -1, dy: 0},
-                       {dx:1, dy: 1},  
-                       {dx:0, dy: 1},  
-                       {dx:-1, dy: 1}],
-               weights: [7,3,5,1],
-               divisor: 4});
+    fs_left = new ErrorTechnique({name:'fs_left',
+                                      nxy_offsets: [{dx: -1, dy: 0},
+                                                    {dx:1, dy: 1},  
+                                                    {dx:0, dy: 1},  
+                                                    {dx:-1, dy: 1}],
+                                      weights: [7,3,5,1],
+                                      divisor: 4});
     
-    var fs_up = new ErrorTechnique({name:'fs_up',
-                                                   nxy_offsets: [{dx: 0, dy: -1},
-                       {dx:1, dy: 1},  
-                       {dx:1, dy: 0},  
-                       {dx:1, dy: -1}],
-               weights: [7,3,5,1],
-               divisor: 4});
+    fs_up = new ErrorTechnique({name:'fs_up',
+                                    nxy_offsets: [{dx: 0, dy: -1},
+                                                  {dx:1, dy: 1},  
+                                                  {dx:1, dy: 0},  
+                                                  {dx:1, dy: -1}],
+                                    weights: [7,3,5,1],
+                                    divisor: 4});
 
-    var fs_down = new ErrorTechnique({name:'fs_down',
-                                                   nxy_offsets: [{dx: 0, dy: 1},
-                       {dx:1, dy: -1},  
-                       {dx:1, dy: 0},  
-                       {dx:1, dy: 1}],
-               weights: [7,3,5,1],
-               divisor: 4});
+    fs_down = new ErrorTechnique({name:'fs_down',
+                                      nxy_offsets: [{dx: 0, dy: 1},
+                                                    {dx:1, dy: -1},  
+                                                    {dx:1, dy: 0},  
+                                                    {dx:1, dy: 1}],
+                                      weights: [7,3,5,1],
+                                      divisor: 4});
 
     _parent.img.filter = new Filter(fs_right, fs_left, fs_up, fs_down);
   };
 
   this.useThresholdFilters = function(){
     var t = new ErrorTechnique({name: 'threshold_right',
-              nxy_offsets: [{dx: 0, dy: 0}],
-              weights : [0],
-              divisor: 0});
+                                nxy_offsets: [{dx: 0, dy: 0}],
+                                weights : [0],
+                                divisor: 0});
     _parent.img.filter = new Filter(t, t, t, t);
   };
 
   function dither(imgData, img){
-    var vertical_scan = img.vertical_scan;
-    var raster = img.raster;
-    var filter = img.filter;
-
-    var data = imgData.data;
-    var w = imgData.width;
-    var h = imgData.height;
-    var d_index = 0;
-    var new_value, old_value, err;
-    var x, y, dx, dy;
-    x = y = 0;
-    dx = dy = 1;
+    var vertical_scan = img.vertical_scan,
+    raster = img.raster,
+    filter = img.filter,
+    data = imgData.data,
+    w = imgData.width,
+    h = imgData.height,
+    d_index = 0,
+    new_value, old_value, err,
+    x = 0, 
+    y = 0, 
+    dx = 1, 
+    dy = 1;
 
     if (raster){
       rasterScan();
