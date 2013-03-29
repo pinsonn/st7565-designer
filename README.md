@@ -32,8 +32,8 @@ Firefox, Safari, and Chrome. I did not test it in IE, nor do I intend to do so.
 ##Known issues:
 
 - Chrome does not allow file access from local files by default, which is neceassary for this app to work properly. 
-If run locally (i.e. not through a hostor local server), start chrome with the '--allow-file-access-from-files' flag 
-or run 'python -m SimpleHTTPServer' in the directory you've saved the repo in
+If run locally (i.e. not through a host or local server), start chrome with the '--allow-file-access-from-files' flag 
+or run 'python -m SimpleHTTPServer' in the directory you've saved the repo in (not necessary w/ node-webkit implementation)
 
 - Current version of Safari (5.1.7 at time of testing in May 2012) doesn't support the FileReader object. Attempting to 
 load saved bitmaps/fonts from a json file won't work as a result. Webkit nightlies do support FileReader, suggesting 
