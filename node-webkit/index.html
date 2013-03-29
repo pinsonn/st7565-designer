@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<!--
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+<head>
+<title>GLCD Designer</title>
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="./css/style.css" />
+
+</head>
+<body>
+<div id="savedItemsContainer">
+	<div class="button close"></div>
+	<div id="savedItemsExport">
+		<span class="button" id="exportSavedItems">Export</span>&nbsp;|&nbsp;
+		<span class="button" id="importSavedItems">Import</span>
+	</div>
+	<div id="savedItems"></div>
+</div>
+<div id="wrapper">
+	<div id="canvasField">
+		<canvas id="canvas" width=50 height=70></canvas>
+	</div>
+	<div>
+		<div id="tools">
+			<div class="tool">
+				<span class="button" id="gridToggle">Hide Grid</span>&nbsp;|&nbsp;<span class="button" id="openEncoding">Show Encoding</span>
+				&nbsp;|&nbsp;
+				<span class="button" id="copyToClipboard">Copy to Clipboard</span>
+			</div>
+			<div class="tool">
+				<span class="button" id="saveItem">Save Item</span>&nbsp;|&nbsp;
+				<span class="button" id="openSavedItems">Show Saved Items</span>&nbsp;|&nbsp;
+				<span class="button" id="invert">Invert</span>
+			</div>
+			<div class="tool">
+				Size:<input type="text" name="cols" size="2" maxlength="3" value="5"/>x
+				<input type="text" name="rows" size="2" maxlength="2" value="7"/>
+			</div>
+			<div id="colorBar">Color:<div class="swatch" id="white"></div><div class="swatch selected" id="black"></div></div>
+			<div class="tool">
+				<span>Brush Size:</span>
+				<span><select id="brushSize">
+						<option value="1" selected>1 px</option>
+						<option value="2">2 px</option>
+						<option value="4">4 px</option>
+					</select>
+				</span>
+			</div>
+			<div class="tool">Page Bit order:&nbsp;<input type="radio" name="bit_order" class="" value="1" checked/>MSb at Top&nbsp;
+					  <input type="radio" name="bit_order" class="" value="0"/>MSb at Bottom&nbsp;
+			</div>
+			<div class="tool">
+				<span>Cell Size:</span>
+				<span>
+					<select id="pixelSize">
+						<option value="5">5 px</option>
+						<option value="10" selected>10 px</option>
+						<option value="20">20 px</option>
+						<option value="30">30 px</option>
+						<option value="50">50 px</option>
+					</select>
+				</span>
+			</div>
+			<div id="ditherTools">
+				<div class="tool">Filter:&nbsp;<select id="filter">
+							<option value="fs" selected>Floyd Steinberg</option>
+							<option value="atkinson">Atkinson</option>
+							<option value="sierra">Sierra Lite</option>
+							<option value="threshold">Threshold</option>
+						</select>
+				</div>
+				<div class="tool">Scan Pattern:&nbsp;<input type="radio" name="scan_pattern" class="" value="1" checked/>Raster&nbsp;
+					  <input type="radio" name="scan_pattern" class="" value="0"/>Serpentine&nbsp;
+				</div>
+				<div class="tool">Scan Direction:&nbsp;<input type="radio" name="scan_direction" class="" value="1" checked/>Horizontal&nbsp;
+					  <input type="radio" name="scan_direction" class="" value="0"/>Vertical&nbsp;
+				</div>
+			</div>
+
+			<div id="clearBtn">Clear</div>
+		</div>
+	</div>
+	<div class="modal" id="encodingContainer"><div class="button close"></div><div id="hexOutput"></div></div>
+	<input type="file" id="fileImport"/>
+	<div class="modal" id="jsonContainer"><div class="button close"></div><div id="jsonOutput"></div></div>
+	<input style="display:none;" id="fileDialog" type="file" nwsaveas/>
+</div>
+<script src="./scripts/jquery-1.7.2.min.js" charset="utf-8"></script>
+<script src="./scripts/Display.js"></script>
+<script src="./scripts/Dither.js"></script>
+<script>
+(function($){
+	
+	glcd = new Display('canvas');
+	dither_img = new Dither(glcd);
+	dither_img.useFloydSteinbergFilters();
+	glcd.zeroBuffer();
+	glcd.drawGrid();
+	if (localStorage['items']){
+		glcd.loadSavedItems();
+	}
+// initialize the UI form elements, in case cached values are being used (I'm talking to you, firefox)
+
+	$('input[type="text"][name="rows"]').val('7');
+	$('input[type="text"][name="cols"]').val('5');
+	$('#pixelSize option[value="10"]').prop('selected','selected');	
+	$('#brushSize option[value="1"]').prop('selected','selected');	
+
+//	$('input:radio[name=filter][value="fs"]').prop('checked', true);
+	$('#filter option[value="fs"]').prop('selected','selected');	
+	$('input:radio[name=scan_pattern][value=1]').prop('checked', true);
+	$('input:radio[name=scan_direction][value=1]').prop('checked', true);
+	$('input:radio[name=bit_order][value=1]').prop('checked', true);
+
+// show the encoding for the display buffer (initialized to 0 for all pixels)
+
+	$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+
+// attach events to the canvas -- mousedown, mousemove, and mouseup
+
+	$('#canvas').mousedown(function(evt){
+// have to pass the stateBuffer array to previousStates by value, not by reference
+		glcd.previousStates.push(glcd.stateBuffer.slice());
+		glcd.editable = true;
+		glcd.drawPixel(evt);
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+	$('#canvas').mousemove(function(evt){
+		if (glcd.editable){
+			glcd.drawPixel(evt);
+			$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+		}
+	});
+
+	$('#canvas').mouseup(function(){
+		glcd.editable = false;
+	});
+
+// attach a change event handler to the pixel size select box
+
+	$('#pixelSize').change(function(){
+		glcd.pixelSize = +$('#pixelSize option:selected').val();
+		glcd.ctx.canvas.height = glcd.rows * glcd.pixelSize;
+		glcd.ctx.canvas.width = glcd.cols * glcd.pixelSize;
+		glcd.h = glcd.ctx.canvas.height;
+		glcd.w = glcd.ctx.canvas.width;
+
+// user may have started a drawing, so redraw the buffer
+
+		glcd.drawBuffer();
+	});
+
+// attach a change event handler to the brush size select box
+
+	$('#brushSize').change(function(){
+		glcd.brushSize = +$('#brushSize option:selected').val();
+	});
+
+// attach an event handler to the clear button. 
+// Because it's dynamically created, use "on" to
+// handle the bubble up to the hexOutput div
+
+	$('#clearBtn').click(function(){
+		glcd.clear();
+		$('#hexOutput').html('');
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+// attach change event handler to the rows input. Clear and resize, reflect 0 encoding accordingly
+
+	$('input[type="text"][name="rows"]').change(function(){
+		var value = +$(this).val();
+		if (value > 64){
+			value = 64;
+			$(this).val('64');
+		}
+		glcd.rows = value;
+		glcd.numPages = Math.ceil(glcd.rows/8);
+		glcd.ctx.canvas.height = value * glcd.pixelSize;
+		glcd.h = glcd.ctx.canvas.height;
+		glcd.clear();
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+// change event handler for cols input. Similar to the rows change event handler
+ 
+	$('input[type="text"][name="cols"]').change(function(){
+		var value = +$(this).val();
+		if (value > 128){
+			value = 128;
+			$(this).val('128');
+		}
+		glcd.cols = value;
+		glcd.ctx.canvas.width = value * glcd.pixelSize;
+		glcd.w = glcd.ctx.canvas.width;
+		glcd.clear();
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+// Change event for the bit order radio button. Re-encode accordingly if it changes.
+
+	$('input:radio[name="bit_order"]').change(function(){
+		glcd.encodeAsBitmap = (+$(this).val()) ? false : true;
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+// check for shift key and ctrl-z or command-z 
+
+	$(document).keydown(function(evt){
+		var ctrlDown = false;
+		if (evt.shiftKey){ 
+			glcd.shiftIsDown = true;
+		} else if ((evt.ctrlKey || evt.metaKey) && (evt.which === 90)){ //ctrl or command z
+			if (glcd.previousStates.length){
+				glcd.stateBuffer = glcd.previousStates.pop();
+				glcd.drawBuffer();
+
+// if we popped the last item out of previousStates, don't draw the clear button (canvas is blank)
+
+				$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+			}	
+
+			return false;
+		}
+	});
+
+// shift key was lifted
+
+	$(document).keyup(function(evt){
+		if (evt.keyCode === 16){ 
+			glcd.shiftIsDown = false;
+		}
+	});
+
+// fill the color swatch divs with the appropriate color
+
+	$('.swatch').each(function(){
+		$(this).css('background-color', $(this).attr('id'));
+	});
+
+// attach click event handler to each color swatch 
+
+	$('.swatch').click(function(){
+		$('.swatch').removeClass('selected');
+		$(this).addClass('selected');
+		glcd.color = $(this).attr('id');
+	});
+
+	$('#gridToggle').click(function(){
+		glcd.showGrid ^= 1;
+		if (glcd.showGrid){
+			$(this).html('Hide Grid');
+		} else {
+			$(this).html('Show Grid');
+		}
+
+		glcd.drawBuffer();
+	});
+
+// Invert the pixels drawn on the display 
+
+	$('#invert').click(function(){
+		glcd.invert();
+		glcd.drawBuffer();
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+
+// show the encoding for the current buffer
+// size the window width based on the number of cols
+ 
+	$('#openEncoding').click(function(){
+		var el = $('#encodingContainer');
+		var new_width = ((glcd.cols-5)/128)*600 + 200;
+		el.css({'width': new_width});
+		var offset = ($(document).width()/2) - (el.width()/2);
+
+		el.css({'left':offset + 'px'});
+		el.show();
+	});
+
+// open saved items list
+	
+	$('#openSavedItems').click(function(){
+		$('#savedItemsContainer').show();
+	});
+
+// attach event handler for close elements
+
+	$(document).on('click', '.close', function(){
+		$(this).parent().hide();
+	});
+
+// delete item from the saved items list
+
+	$('#savedItems').on('click', '.deleteBtn', function(){
+		var key = $(this).parent().parent().attr('id');
+		$('#savedItems').html('');
+		glcd.deleteItem(key);
+	});
+
+// save the current buffer to local storage and refresh the saved items list	
+
+	$('#saveItem').click(function(){
+		glcd.saveItem();
+		$('#savedItems').html('');
+		glcd.loadSavedItems();	
+	});
+
+// open a saved item for editing
+
+	$('#savedItems').on('click', '.editBtn', function(){
+		var key = $(this).parent().parent().attr('id');
+		glcd.restoreItem(key);
+		$('input[type="text"][name="rows"]').val(glcd.rows);
+		$('input[type="text"][name="cols"]').val(glcd.cols);
+		$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+	});
+
+	$('#fileImport').change(function(evt){
+		var evt = evt.originalEvent;
+		var fileList = evt.target.files;
+		$('#savedItems').html('');
+		glcd.loadFromFile(fileList);
+	});
+
+	$('#importSavedItems').click(function(){
+		if (typeof(FileReader) !== "undefined"){
+			$('#fileImport').trigger('click');
+			$('#fileImport').attr('value','');
+		} else {
+			var msg = ($.browser.safari) ? "Your version of safari does not support reading from files directly. Recommend you use google chrome or a webkit nightly build from http://webkit.nightly.org in order to gain this capabilty." : "Your browser does not support reading directly from files.";  
+			alert(msg);
+		}
+	});
+
+	$('#exportSavedItems').click(function(){
+		var fs = require('fs');
+		var file_input = $('#fileDialog');
+		file_input.trigger('click');
+		file_input.change(function(evt){
+			fs.writeFile($(this).val(), glcd.exportSavedItems(), function(err){
+				if(err){
+					console.log(err);
+				} else {
+					console.log("JSON Exported");
+				}
+			});
+		});
+
+/*
+function chooseFile(name) {
+    var chooser = $(name);
+    chooser.trigger('click');            
+    chooser.change(function(evt) {
+      console.log($(this).val());
+    });
+  }
+  $('#btn').click(function(){
+  	chooseFile('#fileDialog');
+  });
+
+//*/		
+/*		$('#jsonOutput').html(glcd.exportSavedItems());
+		var el = $('#jsonContainer');
+		el.css({'width': '600px'});
+		var offset = ($(document).width()/2) - (el.width()/2);
+
+		el.css({'left':offset + 'px'});
+		el.show();
+//*/
+	});
+
+	$('input:radio[name="scan_direction"]').change(function(){
+		dither_img.img.vertical_scan = (+$(this).val()) ? false : true;
+		$(dither_img.img).load();
+	});
+
+	$('input:radio[name="scan_pattern"]').change(function(){
+		dither_img.img.raster = (+$(this).val()) ? true : false;
+		$(dither_img.img).load();
+	});
+
+	$('#filter').change(function(){
+//	$('input:radio[name="filter"]').change(function(){
+		var technique = $(this).val();
+		if (technique === "fs"){
+			dither_img.useFloydSteinbergFilters();
+		} else if (technique === "atkinson"){
+			dither_img.useAtkinsonFilters();
+		} else if (technique === "sierra"){
+			dither_img.useSierraFilters();
+		} else {
+			dither_img.useThresholdFilters();
+		}
+		$(dither_img.img).load();
+	});
+
+	$('#copyToClipboard').click(function(){
+		var gui = require('nw.gui');
+		var clipboard = gui.Clipboard.get();
+		clipboard.set(glcd.encode(false), 'text');
+	});
+
+	$('#canvas').bind('dragover', function(evt){
+
+	// prevent the browser from loading the image when it's dropped
+	// use the "copy" cursor effect on dragover
+
+		evt = evt.originalEvent;
+		evt.stopPropagation();
+		evt.preventDefault();
+		evt.dataTransfer.dropEffect = 'copy';
+	});
+
+	$('#canvas').bind('drop', function(evt){
+
+	// reference the original event, prevent default action, and bubbling
+
+		evt = evt.originalEvent;
+
+		evt.stopPropagation();
+		evt.preventDefault();
+		
+		// get an array of files dropped on the canvas. Even if multiple files are dropped, only use the first
+
+
+		var files = evt.dataTransfer.files; // FileList object.
+	
+		// create a file reader object in order to read the file
+		// use the readAsDataURL method to get the data URL
+		// set the underlay src to the dataURL using the onload method
+		// of the file reader object
+
+		var reader = new FileReader();
+		$(reader).load(function(e){
+			var load;
+			if ((glcd.rows === 64) && (glcd.cols === 128)){
+				glcd.clear();
+				$.when(dither_img.loadImage(e.target.result)).done(function(){
+					$('#hexOutput').html('<h3>Encoding:</h3>&nbsp;' + glcd.encode());
+					$('#ditherTools').show();
+				});
+
+			} else {
+				alert("Drag and Drop for images only allowed if size set to 128x64");
+			}
+		});
+
+		reader.readAsDataURL(files[0]);
+	});
+})(jQuery)
+</script>
+</body>
+</html>
