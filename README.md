@@ -48,7 +48,10 @@ Safari may well do so as well in a future release. Webkit nightlies available fr
 - Behaves more like a true "native" application with file save dialogs and access to the system clipboard. 
 
 ##Revision History:
-**3/28/13**- Added node-webkit implementation. 
-**12/15/12**- Threshold quantization for dropped images added to dithering routines. 
-**11/27/12**- Support for one-bit image dithering added. Drop an image onto the display canvas and behold the wonders!
+**3/28/13**- Added node-webkit implementation.  
+ 
+**12/15/12**- Threshold quantization for dropped images added to dithering routines.  
+ 
+**11/27/12**- Support for one-bit image dithering added. Drop an image onto the display canvas and behold the wonders!  
+
 **6/28/12**- Initial commit. 
